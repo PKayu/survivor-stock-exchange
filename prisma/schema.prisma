@@ -1,0 +1,251 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users & Authentication
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  portfolios    Portfolio[]
+  ratings       Rating[]
+  bids          Bid[]
+  listings      Listing[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Game Configuration
+model Season {
+  id              String    @id @default(cuid())
+  name            String    // e.g., "Survivor 47"
+  startDate       DateTime
+  endDate         DateTime?
+  isActive        Boolean   @default(true)
+  startingSalary  Float     @default(100)
+  contestants     Contestant[]
+  games           Game[]
+  phases          Phase[]
+  portfolios      Portfolio[]
+}
+
+model Contestant {
+  id              String        @id @default(cuid())
+  seasonId        String
+  season          Season        @relation(fields: [seasonId], references: [id])
+  name            String
+  tribe           String?
+  isActive        Boolean       @default(true)
+  isWinner        Boolean       @default(false)
+  eliminatedAt    DateTime?
+  totalShares     Int           @default(0) // Calculated: (Players × Salary) / (Contestants × 2)
+  stockPrices     StockPrice[]
+  portfolios      PortfolioStock[]
+  ratings         Rating[]
+  achievements    Achievement[]
+  listings        Listing[]
+  createdAt       DateTime      @default(now())
+}
+
+model StockPrice {
+  id              String     @id @default(cuid())
+  contestantId    String
+  contestant      Contestant @relation(fields: [contestantId], references: [id])
+  weekNumber      Int
+  price           Float      // Median of ratings
+  calculatedAt    DateTime   @default(now())
+
+  @@unique([contestantId, weekNumber])
+}
+
+// Player Portfolios
+model Portfolio {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id])
+  seasonId        String
+  season          Season          @relation(fields: [seasonId], references: [id])
+  cashBalance     Float           @default(100)
+  totalStock      Int             @default(0)
+  netWorth        Float           @default(100)
+  movement        Float           @default(0)
+  stocks          PortfolioStock[]
+  dividends       Dividend[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([userId, seasonId])
+}
+
+model PortfolioStock {
+  id              String     @id @default(cuid())
+  portfolioId     String
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id])
+  contestantId    String
+  contestant      Contestant @relation(fields: [contestantId], references: [id])
+  shares          Int       @default(0)
+  averagePrice    Float     @default(0)
+
+  @@unique([portfolioId, contestantId])
+}
+
+// Game Phases & Trading
+model Phase {
+  id                String      @id @default(cuid())
+  seasonId          String
+  season            Season      @relation(fields: [seasonId], references: [id])
+  phaseType         PhaseType   // INITIAL_OFFERING, SECOND_OFFERING, FIRST_LISTING, SECOND_LISTING, GAME_DAY
+  startDate         DateTime
+  endDate           DateTime?
+  isManuallyOverridden Boolean  @default(false)
+  isOpen            Boolean     @default(true)
+  bids              Bid[]
+  listings          Listing[]
+  weekNumber        Int         @default(1)
+  name              String?
+  createdAt         DateTime    @default(now())
+}
+
+enum PhaseType {
+  INITIAL_OFFERING
+  SECOND_OFFERING
+  FIRST_LISTING
+  SECOND_LISTING
+  GAME_DAY
+}
+
+// Silent Auction Bids
+model Bid {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  phaseId         String
+  phase           Phase     @relation(fields: [phaseId], references: [id])
+  contestantId    String
+  shares          Int
+  bidPrice        Float
+  isAwarded       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, phaseId, contestantId])
+}
+
+// Player Listings (Selling Stock)
+model Listing {
+  id              String     @id @default(cuid())
+  sellerId        String
+  seller          User       @relation(fields: [sellerId], references: [id])
+  phaseId         String
+  phase           Phase      @relation(fields: [phaseId], references: [id])
+  contestantId    String
+  contestant      Contestant @relation(fields: [contestantId], references: [id])
+  shares          Int
+  minimumPrice    Float
+  isFilled        Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  buyerId         String?
+  filledAt        DateTime?
+}
+
+// Ratings (for stock price calculation)
+model Rating {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  contestantId    String
+  contestant      Contestant @relation(fields: [contestantId], references: [id])
+  weekNumber      Int
+  rating          Int        // 1-10
+  createdAt       DateTime   @default(now())
+
+  @@unique([userId, contestantId, weekNumber])
+}
+
+// Dividends (weekly payouts)
+model Dividend {
+  id              String     @id @default(cuid())
+  portfolioId     String
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id])
+  weekNumber      Int
+  contestantId    String
+  contestantName  String
+  amount          Float
+  paidAt          DateTime   @default(now())
+}
+
+// Contestant Achievements (for dividend calculation)
+model Achievement {
+  id              String          @id @default(cuid())
+  contestantId    String
+  contestant      Contestant      @relation(fields: [contestantId], references: [id])
+  weekNumber      Int
+  achievementType AchievementType
+  multiplier      Float           @default(0.05)
+  createdAt       DateTime        @default(now())
+}
+
+enum AchievementType {
+  REWARD
+  HIDDEN_IDOL
+  TRIBAL_IMMUNITY
+  INDIVIDUAL_IMMUNITY
+}
+
+// Episode/Game tracking
+model Game {
+  id                  String        @id @default(cuid())
+  seasonId            String
+  season              Season        @relation(fields: [seasonId], references: [id])
+  episodeNumber       Int
+  airDate             DateTime
+  aired               Boolean       @default(false)
+  dividendProcessed   Boolean       @default(false)
+  title               String?
+  createdAt           DateTime      @default(now())
+}
