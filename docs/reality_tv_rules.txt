@@ -1,0 +1,7 @@
+For example, if a player own 5 stock of a contestant that is on a tribe that wins reward
+and tribal immunity, and also finds an idol, it would be 5 * (.05 + .05 + .10) = 1.00 in
+dividends.
+Player Elimination
+A player is eliminated if:
+1. All of their remaining stock is worthless
+2. Are unable to purchase anymore stock after a 3 week period.

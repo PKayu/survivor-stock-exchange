@@ -1,0 +1,89 @@
+
+=== PAGE 1 ===
+Reality TV Stock
+Exchange Rules
+Overview
+Players will buy and trade stocks of contestants. The player with the most stock of the
+winning contestant wins.
+Basic Terms
+Player
+A player is the participant playing this game! This is not to be confused with a contestant.
+They must wisely buy and sell stocks in order to accumulate the most stock of the
+winning contestant.
+Contestant
+Contestants are the individuals that are participating in the TV show. Each participant is
+assigned a certain number of stock that can be bought and sold among players. The
+amount of stock available per contestant is calculated by (Number of Players * Starting
+Salary) / (Number of Contestants * 2). For example, if there are 8 players with a starting
+salary of 100$ with 18 contestants in the season, this would be ( 8 * 100) / (18 * 2) = 22.22.
+This would be rounded to 22 shares.
+=== PAGE 2 ===
+Stages
+Overview
+While the exchange rules are slightly different during the first week, a basic week is
+divided into 3 stages,
+1. First Listing
+2. Second Listing
+3. Game Day
+Stocks can be bought and sold during the First and Second listings. This allows players a
+chance to free up cash in order to purchase more desirable stock. On game day, stock
+cannot be bought or sold. Below is a more detailed description of all stages.
+Initial Stock Offering
+The first stage is the Initial Stock offering. This stage will open one week prior to the
+airing of the first episode and last three days. This is when players get their first
+opportunity to purchase stock. Each player will be allotted with a starting salary of 100$
+that can be used to purchase stock. Players can bid on stocks at a minimum of one dollar
+in .25 cent increments. It is a silent auction and stocks will not not be awarded till the
+Initial Stock Offering closes. If there are not enough stock available during the initial
+stock offering, it will first allot stock in order of who bid the highest. If players have bid
+at the same price, the stock will be divided evenly and sold to the bidding players. If
+there are not enough to be divided evenly, the remaining stock will be randomly sold to
+the remaining bidding players.
+=== PAGE 3 ===
+Second Stock Offering
+This will occur immediately after the Initial Stock Offering and will list whatever
+remaining stock are still available after players have made their initial purchase. This
+gives players one final chance to purchase any remaining stock that is still available.
+Bidding follows the same rules from the Initial Stock Offering with bidding closing and
+stock awarded at the end of the Second Stock Offering. Stock bought in the first stage
+cannot be sold yet during this stage.
+First Listing
+First Listing will occur the day following the episode and close three days later. During
+this stage, players can list any unwanted stock at the price they are willing to sell it for.
+Other players can then bid starting at the minimum price in silent auction style. The
+minimum price must be at least .25 and can increase in increments of .25. At the end of
+this first listing, stocks will be awarded in order of the highest bidder. If players have bid
+at the same price, the stock will be divided evenly and sold to the bidding players. If
+there are not enough to be divided evenly, the remaining stock will be randomly sold to
+the remaining bidding players.
+Second Listing
+This will immediately follow the first listing stage and close the day before the next
+episode. All rules from the first listing apply when buying and selling stock. This gives
+players one final opportunity to sell or purchase stock before the episode airs.
+=== PAGE 4 ===
+Game Day
+Game day occurs on the day that the episode airs. Stocks cannot be purchased or sold.
+When a contestant is eliminated from the show, all stocks belonging to that contestant
+become worthless and cannot be bought or sold.
+Finale
+After the season finale, the player with the most stock of the winning contestant will win.
+If there is a tie, the player with the most amount of money on hand wins.
+Other Terminology
+Dividends
+Dividends are paid out the day after the episode and are awarded to players who own
+stock of contestants that do well in an episode. A player is paid out per stock per
+achievement by the contestant in an episode. The following list is an example of
+achievements and their dividend values for the game of Survivor but can be changed
+and modified depending on the TV show:
+● Reward - .05
+● Finding Hidden Immunity/Advantage - .05
+● Winning Tribal Immunity - .10
+● Individual Immunity - .15
+=== PAGE 5 ===
+For example, if a player own 5 stock of a contestant that is on a tribe that wins reward
+and tribal immunity, and also finds an idol, it would be 5 * (.05 + .05 + .10) = 1.00 in
+dividends.
+Player Elimination
+A player is eliminated if:
+1. All of their remaining stock is worthless
+2. Are unable to purchase anymore stock after a 3 week period.
