@@ -130,6 +130,11 @@ survivor-stock-exchange/
 - `npm run test:run` - Vitest single run
 - Single test: `npm run test -- path/to/file.test.ts`
 
+## Operational Docs
+
+- `docs/implementation-tracker.md` - Feature status and remaining work
+- `docs/admin-workflows.md` - Preseason and weekly admin runbook (official rules)
+
 ## How It Works
 
 ### Trading System

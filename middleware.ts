@@ -1,12 +1,13 @@
 import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export const runtime = "nodejs"
 
-export default auth((req) => {
+export default auth(async (req) => {
   const path = req.nextUrl.pathname
-  const token = req.auth
-  const isAdmin = token?.isAdmin as boolean | undefined
+  const session = req.auth
+  let isAdmin = Boolean(session?.user?.isAdmin)
 
   // Protected paths
   const isProtectedPath =
@@ -19,7 +20,15 @@ export default auth((req) => {
 
   const isAdminPath = path.startsWith("/admin/")
 
-  if (isProtectedPath && !token) {
+  if (isAdminPath && session?.user?.email && !isAdmin) {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { isAdmin: true },
+    })
+    isAdmin = Boolean(dbUser?.isAdmin)
+  }
+
+  if (isProtectedPath && !session) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
