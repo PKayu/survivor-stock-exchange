@@ -22,6 +22,7 @@ interface Contestant {
   name: string
   tribe: string | null
   currentPrice: number
+  minBidPrice?: number
 }
 
 interface Bid {
@@ -74,7 +75,10 @@ export function PlaceBidForm({
           {
             contestantId: remainingContestants[0].id,
             shares: 1,
-            bidPrice: remainingContestants[0].currentPrice,
+            bidPrice: Math.max(
+              remainingContestants[0].currentPrice,
+              remainingContestants[0].minBidPrice ?? 0
+            ),
           },
         ])
       }
@@ -108,6 +112,26 @@ export function PlaceBidForm({
 
     if (bids.length === 0) {
       setError("Please add at least one bid")
+      return
+    }
+
+    const hasInvalidIncrement = bids.some(
+      (bid) => Math.abs(bid.bidPrice * 4 - Math.round(bid.bidPrice * 4)) >= 1e-9
+    )
+    if (hasInvalidIncrement) {
+      setError("Bid prices must be in $0.25 increments")
+      return
+    }
+
+    const violatesMinimum = bids.some((bid) => {
+      const contestant = contestants.find((c) => c.id === bid.contestantId)
+      if (!contestant) return true
+      const minBid = contestant.minBidPrice ?? 1
+      return bid.bidPrice < minBid
+    })
+
+    if (violatesMinimum) {
+      setError("One or more bids are below the minimum allowed price")
       return
     }
 
@@ -200,8 +224,8 @@ export function PlaceBidForm({
                       <Label>Bid Price</Label>
                       <Input
                         type="number"
-                        min="0.01"
-                        step="0.01"
+                        min={String(contestant?.minBidPrice ?? 1)}
+                        step="0.25"
                         value={bid.bidPrice}
                         onChange={(e) => updateBid(index, "bidPrice", parseFloat(e.target.value) || 0)}
                         disabled={isLoading}
@@ -223,6 +247,11 @@ export function PlaceBidForm({
                     <p className="text-sm text-muted-foreground mt-2">
                       {contestant.name}: {bid.shares} shares @ {formatCurrency(bid.bidPrice)} ={" "}
                       <strong>{formatCurrency(bid.shares * bid.bidPrice)}</strong>
+                    </p>
+                  )}
+                  {contestant?.minBidPrice && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Minimum for current listing market: {formatCurrency(contestant.minBidPrice)}
                     </p>
                   )}
                 </CardContent>

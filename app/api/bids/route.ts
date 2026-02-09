@@ -6,9 +6,13 @@ import { z } from "zod"
 const bidSchema = z.object({
   phaseId: z.string(),
   contestantId: z.string(),
-  shares: z.number().min(1),
-  bidPrice: z.number().min(0.01),
+  shares: z.number().int().min(1),
+  bidPrice: z.number().min(0.25),
 })
+
+function isQuarterIncrement(value: number): boolean {
+  return Math.abs(value * 4 - Math.round(value * 4)) < 1e-9
+}
 
 export async function POST(req: Request) {
   try {
@@ -29,6 +33,33 @@ export async function POST(req: Request) {
 
     if (!phase || !phase.isOpen) {
       return NextResponse.json({ error: "Phase is not open" }, { status: 400 })
+    }
+
+    if (phase.phaseType === "GAME_DAY") {
+      return NextResponse.json({ error: "Trading is closed on Game Day" }, { status: 400 })
+    }
+
+    if (!isQuarterIncrement(bidPrice)) {
+      return NextResponse.json(
+        { error: "Bid price must be in $0.25 increments" },
+        { status: 400 }
+      )
+    }
+
+    const isOfferingPhase =
+      phase.phaseType === "INITIAL_OFFERING" || phase.phaseType === "SECOND_OFFERING"
+    const isListingPhase =
+      phase.phaseType === "FIRST_LISTING" || phase.phaseType === "SECOND_LISTING"
+
+    if (!isOfferingPhase && !isListingPhase) {
+      return NextResponse.json({ error: "Invalid trading phase" }, { status: 400 })
+    }
+
+    if (isOfferingPhase && bidPrice < 1) {
+      return NextResponse.json(
+        { error: "Offering bids must be at least $1.00" },
+        { status: 400 }
+      )
     }
 
     // Check if user has a portfolio
@@ -65,8 +96,41 @@ export async function POST(req: Request) {
       where: { id: contestantId },
     })
 
-    if (!contestant || contestant.seasonId !== phase.seasonId) {
+    if (!contestant || contestant.seasonId !== phase.seasonId || !contestant.isActive) {
       return NextResponse.json({ error: "Invalid contestant" }, { status: 400 })
+    }
+
+    if (isListingPhase) {
+      const availableListings = await prisma.listing.findMany({
+        where: {
+          phaseId,
+          contestantId,
+          isFilled: false,
+          sellerId: { not: session.user.id },
+        },
+        select: {
+          minimumPrice: true,
+        },
+      })
+
+      if (availableListings.length === 0) {
+        return NextResponse.json(
+          { error: "No active listings available for this contestant" },
+          { status: 400 }
+        )
+      }
+
+      const minimumListingPrice = Math.min(
+        ...availableListings.map((listing) => listing.minimumPrice)
+      )
+      if (bidPrice < minimumListingPrice) {
+        return NextResponse.json(
+          {
+            error: `Bid must be at least ${minimumListingPrice.toFixed(2)} for available listings`,
+          },
+          { status: 400 }
+        )
+      }
     }
 
     // Create bid

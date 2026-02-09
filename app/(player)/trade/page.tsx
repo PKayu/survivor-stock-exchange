@@ -77,7 +77,9 @@ async function getTradeData(userId: string) {
   // Get active listings
   const listings = await prisma.listing.findMany({
     where: {
-      phase: { seasonId: activeSeason.id },
+      ...(currentPhase
+        ? { phaseId: currentPhase.id }
+        : { phase: { seasonId: activeSeason.id } }),
       isFilled: false,
     },
     include: {
@@ -194,6 +196,30 @@ async function TradePageContent() {
 
   const isGameDay = currentPhase?.phaseType === "GAME_DAY"
 
+  const listingContestants = contestants
+    .map((contestant) => {
+      const activeListings = listings.filter(
+        (listing) =>
+          listing.contestantId === contestant.id &&
+          listing.sellerId !== session.user.id &&
+          listing.phaseId === currentPhase?.id
+      )
+
+      if (activeListings.length === 0) return null
+
+      const minBidPrice = Math.min(
+        ...activeListings.map((listing) => listing.minimumPrice)
+      )
+
+      return {
+        ...contestant,
+        minBidPrice,
+      }
+    })
+    .filter((contestant): contestant is NonNullable<typeof contestant> =>
+      Boolean(contestant)
+    )
+
   const timeRemaining = currentPhase?.endDate
     ? getTimeRemaining(currentPhase.endDate)
     : { days: 0, hours: 0, minutes: 0, isPast: false }
@@ -268,18 +294,24 @@ async function TradePageContent() {
 
           {/* Bids Tab */}
           <TabsContent value="bids" className="space-y-4">
-            {isAuctionPhase ? (
+            {isAuctionPhase || isListingPhase ? (
               <>
                 <Card>
                   <CardHeader>
-                    <CardTitle>Place Silent Auction Bids</CardTitle>
+                    <CardTitle>
+                      {isAuctionPhase
+                        ? "Place Silent Auction Bids"
+                        : "Place Listing-Phase Buy Bids"}
+                    </CardTitle>
                     <CardDescription>
-                      Bid on contestants. Highest bids win! You'll be charged only if you win.
+                      {isAuctionPhase
+                        ? "Bid on contestants. Highest bids win! You will be charged only if you win."
+                        : "Bid on listed contestants in $0.25 increments. Bids must meet listing minimum prices."}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <PlaceBidForm
-                      contestants={contestants}
+                      contestants={isListingPhase ? listingContestants : contestants}
                       phaseId={currentPhase.id}
                       existingBids={existingBids}
                       cashBalance={portfolio?.cashBalance ?? 0}
@@ -292,7 +324,11 @@ async function TradePageContent() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Your Bids</CardTitle>
-                    <CardDescription>Your active bids for this phase</CardDescription>
+                    <CardDescription>
+                      {isAuctionPhase
+                        ? "Your active bids for this offering phase"
+                        : "Your active bids for this listing phase"}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {existingBids.length > 0 ? (
@@ -343,7 +379,7 @@ async function TradePageContent() {
               <Card>
                 <CardContent className="py-8">
                   <p className="text-center text-muted-foreground">
-                    Silent auction bidding is only available during Initial and Second Offering phases.
+                    Bidding is only available during offering and listing phases.
                   </p>
                 </CardContent>
               </Card>
@@ -358,7 +394,7 @@ async function TradePageContent() {
                   <CardHeader>
                     <CardTitle>List Your Stocks for Sale</CardTitle>
                     <CardDescription>
-                      Sell stocks you own. You'll receive 50% of the current stock value.
+                      Sell stocks you own. You will receive 50% of the current stock value.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -385,7 +421,7 @@ async function TradePageContent() {
                             <TableHead>Contestant</TableHead>
                             <TableHead className="text-right">Shares</TableHead>
                             <TableHead className="text-right">Min Price</TableHead>
-                            <TableHead />
+                              <TableHead>Action</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -398,9 +434,7 @@ async function TradePageContent() {
                                 {formatCurrency(listing.minimumPrice)}
                               </TableCell>
                               <TableCell className="text-right">
-                                <Button size="sm" variant="outline" disabled>
-                                  Buy
-                                </Button>
+                                <Badge variant="secondary">Use Buy Stock tab to bid</Badge>
                               </TableCell>
                             </TableRow>
                           ))}

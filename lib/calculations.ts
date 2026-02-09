@@ -34,6 +34,84 @@ function shuffleDeterministic<T>(items: T[], seedKey: string): T[] {
   return result
 }
 
+export function allocateTiedBidShares(
+  bids: Array<{ bidId: string; requestedShares: number }>,
+  availableShares: number,
+  seedKey: string
+): Map<string, number> {
+  const allocations = new Map<string, number>()
+  const eligibleBids = bids.filter((bid) => bid.requestedShares > 0)
+
+  for (const bid of eligibleBids) {
+    allocations.set(bid.bidId, 0)
+  }
+
+  if (availableShares <= 0 || eligibleBids.length === 0) {
+    return allocations
+  }
+
+  const totalRequested = eligibleBids.reduce(
+    (sum, bid) => sum + bid.requestedShares,
+    0
+  )
+
+  if (availableShares >= totalRequested) {
+    for (const bid of eligibleBids) {
+      allocations.set(bid.bidId, bid.requestedShares)
+    }
+    return allocations
+  }
+
+  const equalSplit = Math.floor(availableShares / eligibleBids.length)
+
+  let allocated = 0
+  for (const bid of eligibleBids) {
+    const shares = Math.min(equalSplit, bid.requestedShares)
+    allocations.set(bid.bidId, shares)
+    allocated += shares
+  }
+
+  let remainder = availableShares - allocated
+  if (remainder <= 0) {
+    return allocations
+  }
+
+  const candidates = eligibleBids.filter((bid) => {
+    const alreadyAwarded = allocations.get(bid.bidId) ?? 0
+    return alreadyAwarded < bid.requestedShares
+  })
+
+  if (candidates.length === 0) {
+    return allocations
+  }
+
+  const orderedCandidates = shuffleDeterministic(candidates, seedKey)
+  let pointer = 0
+
+  while (remainder > 0) {
+    let foundCandidate = false
+
+    for (let i = 0; i < orderedCandidates.length; i++) {
+      const candidate = orderedCandidates[(pointer + i) % orderedCandidates.length]
+      const alreadyAwarded = allocations.get(candidate.bidId) ?? 0
+
+      if (alreadyAwarded < candidate.requestedShares) {
+        allocations.set(candidate.bidId, alreadyAwarded + 1)
+        pointer = (pointer + i + 1) % orderedCandidates.length
+        remainder -= 1
+        foundCandidate = true
+        break
+      }
+    }
+
+    if (!foundCandidate) {
+      break
+    }
+  }
+
+  return allocations
+}
+
 async function awardBidShares(
   bid: {
     id: string
@@ -106,6 +184,153 @@ async function awardBidShares(
         isAwarded: true,
         shares: awardedShares,
       },
+    })
+
+    return true
+  })
+}
+
+async function executeListingTransfer({
+  listingId,
+  buyerUserId,
+  sellerUserId,
+  contestantId,
+  seasonId,
+  shares,
+  pricePerShare,
+}: {
+  listingId: string
+  buyerUserId: string
+  sellerUserId: string
+  contestantId: string
+  seasonId: string
+  shares: number
+  pricePerShare: number
+}): Promise<boolean> {
+  if (shares <= 0) return false
+
+  const totalCost = shares * pricePerShare
+
+  return prisma.$transaction(async (tx) => {
+    const [buyerPortfolio, sellerPortfolio] = await Promise.all([
+      tx.portfolio.findUnique({
+        where: {
+          userId_seasonId: {
+            userId: buyerUserId,
+            seasonId,
+          },
+        },
+      }),
+      tx.portfolio.findUnique({
+        where: {
+          userId_seasonId: {
+            userId: sellerUserId,
+            seasonId,
+          },
+        },
+      }),
+    ])
+
+    if (!buyerPortfolio || !sellerPortfolio) {
+      return false
+    }
+
+    if (buyerPortfolio.cashBalance < totalCost) {
+      return false
+    }
+
+    const [listing, sellerStock] = await Promise.all([
+      tx.listing.findUnique({
+        where: { id: listingId },
+      }),
+      tx.portfolioStock.findUnique({
+        where: {
+          portfolioId_contestantId: {
+            portfolioId: sellerPortfolio.id,
+            contestantId,
+          },
+        },
+      }),
+    ])
+
+    if (
+      !listing ||
+      listing.isFilled ||
+      listing.shares < shares ||
+      !sellerStock ||
+      sellerStock.shares < shares
+    ) {
+      return false
+    }
+
+    await Promise.all([
+      tx.portfolio.update({
+        where: { id: buyerPortfolio.id },
+        data: {
+          cashBalance: { decrement: totalCost },
+        },
+      }),
+      tx.portfolio.update({
+        where: { id: sellerPortfolio.id },
+        data: {
+          cashBalance: { increment: totalCost },
+        },
+      }),
+      tx.portfolioStock.update({
+        where: { id: sellerStock.id },
+        data: {
+          shares: { decrement: shares },
+        },
+      }),
+    ])
+
+    const buyerStock = await tx.portfolioStock.findUnique({
+      where: {
+        portfolioId_contestantId: {
+          portfolioId: buyerPortfolio.id,
+          contestantId,
+        },
+      },
+    })
+
+    if (buyerStock) {
+      const totalShares = buyerStock.shares + shares
+      const newAveragePrice =
+        (buyerStock.averagePrice * buyerStock.shares + pricePerShare * shares) /
+        totalShares
+
+      await tx.portfolioStock.update({
+        where: { id: buyerStock.id },
+        data: {
+          shares: { increment: shares },
+          averagePrice: newAveragePrice,
+        },
+      })
+    } else {
+      await tx.portfolioStock.create({
+        data: {
+          portfolioId: buyerPortfolio.id,
+          contestantId,
+          shares,
+          averagePrice: pricePerShare,
+        },
+      })
+    }
+
+    const remainingShares = listing.shares - shares
+    await tx.listing.update({
+      where: { id: listingId },
+      data:
+        remainingShares <= 0
+          ? {
+              shares: 0,
+              isFilled: true,
+              buyerId: buyerUserId,
+              filledAt: new Date(),
+            }
+          : {
+              shares: remainingShares,
+            },
     })
 
     return true
@@ -224,17 +449,16 @@ export async function processDividends(
     }
   }
 
-  // Mark game as dividend processed
-  const games = await prisma.game.findMany({
-    where: { seasonId, dividendProcessed: false },
+  // Mark only the target week as processed
+  await prisma.game.updateMany({
+    where: {
+      seasonId,
+      episodeNumber: weekNumber,
+      aired: true,
+      dividendProcessed: false,
+    },
+    data: { dividendProcessed: true },
   })
-
-  for (const game of games) {
-    await prisma.game.update({
-      where: { id: game.id },
-      data: { dividendProcessed: true },
-    })
-  }
 }
 
 /**
@@ -374,60 +598,14 @@ export async function settleBids(phaseId: string): Promise<void> {
 
       if (eligibleBids.length === 0) continue
 
-      const totalRequested = eligibleBids.reduce((sum, item) => sum + item.requestedShares, 0)
-      const awardedSharesByBid = new Map<string, number>()
-
-      if (availableShares >= totalRequested) {
-        for (const item of eligibleBids) {
-          awardedSharesByBid.set(item.bid.id, item.requestedShares)
-        }
-      } else {
-        // Official tie rule: split evenly, then randomly assign remainder.
-        const equalSplit = Math.floor(availableShares / eligibleBids.length)
-
-        let allocated = 0
-        for (const item of eligibleBids) {
-          const shares = Math.min(equalSplit, item.requestedShares)
-          awardedSharesByBid.set(item.bid.id, shares)
-          allocated += shares
-        }
-
-        let remainder = availableShares - allocated
-
-        if (remainder > 0) {
-          const candidates = eligibleBids.filter((item) => {
-            const alreadyAwarded = awardedSharesByBid.get(item.bid.id) ?? 0
-            return alreadyAwarded < item.requestedShares
-          })
-
-          if (candidates.length > 0) {
-            const orderedCandidates = shuffleDeterministic(
-              candidates,
-              `${phaseId}:${contestantId}:${price}`
-            )
-
-            let pointer = 0
-            while (remainder > 0) {
-              let foundCandidate = false
-
-              for (let i = 0; i < orderedCandidates.length; i++) {
-                const candidate = orderedCandidates[(pointer + i) % orderedCandidates.length]
-                const alreadyAwarded = awardedSharesByBid.get(candidate.bid.id) ?? 0
-
-                if (alreadyAwarded < candidate.requestedShares) {
-                  awardedSharesByBid.set(candidate.bid.id, alreadyAwarded + 1)
-                  pointer = (pointer + i + 1) % orderedCandidates.length
-                  remainder -= 1
-                  foundCandidate = true
-                  break
-                }
-              }
-
-              if (!foundCandidate) break
-            }
-          }
-        }
-      }
+      const awardedSharesByBid = allocateTiedBidShares(
+        eligibleBids.map((item) => ({
+          bidId: item.bid.id,
+          requestedShares: item.requestedShares,
+        })),
+        availableShares,
+        `${phaseId}:${contestantId}:${price}`
+      )
 
       // Persist awards and keep in-memory cash tracking in sync
       for (const item of eligibleBids) {
@@ -505,55 +683,278 @@ async function getCurrentWeek(seasonId: string): Promise<number> {
  * Process stock listings (player-to-player trading)
  */
 export async function processListings(phaseId: string): Promise<void> {
+  const phase = await prisma.phase.findUnique({
+    where: { id: phaseId },
+    include: {
+      season: { include: { contestants: true } },
+    },
+  })
+
+  if (!phase) throw new Error("Phase not found")
+  if (
+    phase.phaseType !== "FIRST_LISTING" &&
+    phase.phaseType !== "SECOND_LISTING"
+  ) {
+    throw new Error("processListings can only run during listing phases")
+  }
+
   const listings = await prisma.listing.findMany({
     where: { phaseId, isFilled: false },
     include: {
       seller: true,
       contestant: true,
     },
+    orderBy: [{ minimumPrice: "asc" }, { createdAt: "asc" }],
   })
 
-  for (const listing of listings) {
-    // Find matching bids (buyers willing to pay at least the minimum price)
-    const phase = await prisma.phase.findUnique({
+  const bids = await prisma.bid.findMany({
+    where: { phaseId, isAwarded: false },
+    include: { user: true },
+    orderBy: [{ bidPrice: "desc" }, { createdAt: "asc" }],
+  })
+
+  if (listings.length === 0 || bids.length === 0) {
+    await prisma.phase.update({
       where: { id: phaseId },
+      data: { isOpen: false },
     })
+    await updatePortfolioValues(phase.seasonId)
+    return
+  }
 
-    if (!phase) continue
-
-    // For simplicity, this is a first-come-first-serve matching
-    // In a real implementation, you'd want more sophisticated matching
-
-    // Apply selling penalty: seller gets 50% of stock value
-    const sellerPortfolio = await prisma.portfolio.findUnique({
-      where: {
-        userId_seasonId: {
-          userId: listing.sellerId,
-          seasonId: phase.seasonId,
-        },
+  const listingStateById = new Map(
+    listings.map((listing) => [
+      listing.id,
+      {
+        ...listing,
+        remainingShares: listing.shares,
       },
-    })
+    ])
+  )
 
-    if (!sellerPortfolio) continue
+  const listingContestantIds = Array.from(
+    new Set(listings.map((listing) => listing.contestantId))
+  )
 
-    // Check seller has enough shares
-    const sellerStock = await prisma.portfolioStock.findUnique({
-      where: {
-        portfolioId_contestantId: {
-          portfolioId: sellerPortfolio.id,
-          contestantId: listing.contestantId,
-        },
+  const sellerIds = Array.from(new Set(listings.map((listing) => listing.sellerId)))
+  const bidderIds = Array.from(new Set(bids.map((bid) => bid.userId)))
+  const relevantUserIds = Array.from(new Set([...sellerIds, ...bidderIds]))
+
+  const portfolios = await prisma.portfolio.findMany({
+    where: {
+      seasonId: phase.seasonId,
+      userId: { in: relevantUserIds },
+    },
+    select: {
+      id: true,
+      userId: true,
+      cashBalance: true,
+    },
+  })
+
+  const portfolioByUser = new Map(
+    portfolios.map((portfolio) => [portfolio.userId, portfolio])
+  )
+
+  const cashByUser = new Map(
+    portfolios.map((portfolio) => [portfolio.userId, portfolio.cashBalance])
+  )
+
+  const sellerPortfolioIds = portfolios
+    .filter((portfolio) => sellerIds.includes(portfolio.userId))
+    .map((portfolio) => portfolio.id)
+
+  const sellerStocks = await prisma.portfolioStock.findMany({
+    where: {
+      portfolioId: { in: sellerPortfolioIds },
+      contestantId: { in: listingContestantIds },
+    },
+    include: {
+      portfolio: {
+        select: { userId: true },
       },
-    })
+    },
+  })
 
-    if (!sellerStock || sellerStock.shares < listing.shares) {
-      continue // Seller doesn't have enough shares
+  const sellerRemainingByKey = new Map<string, number>()
+  for (const stock of sellerStocks) {
+    sellerRemainingByKey.set(`${stock.portfolio.userId}:${stock.contestantId}`, stock.shares)
+  }
+
+  const listingsByContestant = new Map<string, Array<typeof listings[number] & { remainingShares: number }>>()
+  for (const listing of listingStateById.values()) {
+    if (!listingsByContestant.has(listing.contestantId)) {
+      listingsByContestant.set(listing.contestantId, [])
+    }
+    listingsByContestant.get(listing.contestantId)!.push(listing)
+  }
+
+  const bidsByContestant = new Map<string, typeof bids>()
+  for (const bid of bids) {
+    if (!bidsByContestant.has(bid.contestantId)) {
+      bidsByContestant.set(bid.contestantId, [])
+    }
+    bidsByContestant.get(bid.contestantId)!.push(bid)
+  }
+
+  for (const contestant of phase.season.contestants) {
+    const contestantListings = listingsByContestant.get(contestant.id) ?? []
+    const contestantBids = bidsByContestant.get(contestant.id) ?? []
+
+    if (contestantListings.length === 0 || contestantBids.length === 0) {
+      continue
     }
 
-    // For this implementation, we'll mark listings as fillable
-    // but require manual admin approval for actual transfers
-    // This allows for review of fair trades
+    const bidsByPrice = new Map<number, typeof contestantBids>()
+    for (const bid of contestantBids) {
+      if (!bidsByPrice.has(bid.bidPrice)) {
+        bidsByPrice.set(bid.bidPrice, [])
+      }
+      bidsByPrice.get(bid.bidPrice)!.push(bid)
+    }
+
+    const prices = Array.from(bidsByPrice.keys()).sort((a, b) => b - a)
+
+    for (const price of prices) {
+      const priceBids = bidsByPrice.get(price) ?? []
+
+      const totalListingSharesAtPrice = contestantListings.reduce((sum, listing) => {
+        if (listing.minimumPrice > price) return sum
+        if (listing.remainingShares <= 0) return sum
+
+        const sellerKey = `${listing.sellerId}:${listing.contestantId}`
+        const sellerRemaining = sellerRemainingByKey.get(sellerKey) ?? 0
+        if (sellerRemaining <= 0) return sum
+
+        return sum + Math.min(listing.remainingShares, sellerRemaining)
+      }, 0)
+
+      if (totalListingSharesAtPrice <= 0) {
+        continue
+      }
+
+      const candidateBids = priceBids
+        .map((bid) => {
+          const availableCash = cashByUser.get(bid.userId) ?? 0
+          const maxAffordableShares = Math.floor(availableCash / price)
+
+          const sharesAvailableToBidder = contestantListings.reduce((sum, listing) => {
+            if (listing.sellerId === bid.userId) return sum
+            if (listing.minimumPrice > price) return sum
+            if (listing.remainingShares <= 0) return sum
+
+            const sellerKey = `${listing.sellerId}:${listing.contestantId}`
+            const sellerRemaining = sellerRemainingByKey.get(sellerKey) ?? 0
+            if (sellerRemaining <= 0) return sum
+
+            return sum + Math.min(listing.remainingShares, sellerRemaining)
+          }, 0)
+
+          const requestedShares = Math.min(
+            bid.shares,
+            Math.max(maxAffordableShares, 0),
+            sharesAvailableToBidder
+          )
+
+          return {
+            bid,
+            requestedShares,
+          }
+        })
+        .filter((item) => item.requestedShares > 0)
+
+      if (candidateBids.length === 0) {
+        continue
+      }
+
+      const allocations = allocateTiedBidShares(
+        candidateBids.map((item) => ({
+          bidId: item.bid.id,
+          requestedShares: item.requestedShares,
+        })),
+        totalListingSharesAtPrice,
+        `${phaseId}:${contestant.id}:${price}:listing`
+      )
+
+      for (const candidate of candidateBids) {
+        let neededShares = allocations.get(candidate.bid.id) ?? 0
+        let awardedShares = 0
+
+        if (neededShares <= 0) {
+          continue
+        }
+
+        for (const listing of contestantListings) {
+          if (neededShares <= 0) break
+          if (listing.sellerId === candidate.bid.userId) continue
+          if (listing.minimumPrice > price) continue
+          if (listing.remainingShares <= 0) continue
+
+          const buyerPortfolio = portfolioByUser.get(candidate.bid.userId)
+          const sellerPortfolio = portfolioByUser.get(listing.sellerId)
+          if (!buyerPortfolio || !sellerPortfolio) continue
+
+          const sellerKey = `${listing.sellerId}:${listing.contestantId}`
+          const sellerRemaining = sellerRemainingByKey.get(sellerKey) ?? 0
+          if (sellerRemaining <= 0) continue
+
+          const availableCash = cashByUser.get(candidate.bid.userId) ?? 0
+          const affordableShares = Math.floor(availableCash / price)
+          if (affordableShares <= 0) break
+
+          const transferableShares = Math.min(
+            neededShares,
+            listing.remainingShares,
+            sellerRemaining,
+            affordableShares
+          )
+
+          if (transferableShares <= 0) continue
+
+          const transferred = await executeListingTransfer({
+            listingId: listing.id,
+            buyerUserId: candidate.bid.userId,
+            sellerUserId: listing.sellerId,
+            contestantId: listing.contestantId,
+            seasonId: phase.seasonId,
+            shares: transferableShares,
+            pricePerShare: price,
+          })
+
+          if (!transferred) continue
+
+          const transferTotal = transferableShares * price
+          listing.remainingShares -= transferableShares
+          sellerRemainingByKey.set(sellerKey, sellerRemaining - transferableShares)
+          cashByUser.set(candidate.bid.userId, availableCash - transferTotal)
+          cashByUser.set(
+            listing.sellerId,
+            (cashByUser.get(listing.sellerId) ?? 0) + transferTotal
+          )
+
+          awardedShares += transferableShares
+          neededShares -= transferableShares
+        }
+
+        if (awardedShares > 0) {
+          await prisma.bid.update({
+            where: { id: candidate.bid.id },
+            data: {
+              isAwarded: true,
+              shares: awardedShares,
+            },
+          })
+        }
+      }
+    }
   }
+
+  await prisma.phase.update({
+    where: { id: phaseId },
+    data: { isOpen: false },
+  })
+
+  await updatePortfolioValues(phase.seasonId)
 }
 
 /**

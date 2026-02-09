@@ -17,19 +17,19 @@ This tracker is the single source of truth for what is already implemented versu
 ## B) Season setup (admin-first)
 - [x] Create and activate/deactivate seasons (`/admin/seasons`)
 - [x] Add and manage contestants (`/admin/contestants`)
-- [~] Player season enrollment workflow (manual gaps still exist)
-- [~] Contestant share allocation formula exists in code, not fully integrated into admin setup workflow
-- [ ] Season readiness checklist and setup runbook controls on admin dashboard
+- [x] Player season enrollment workflow
+- [x] Contestant share allocation integrated into admin setup workflow
+- [x] Season readiness checklist and setup runbook controls on admin dashboard
 
 ## C) Trading phases and auction engine
 - [x] Phase records and manual open/close controls (`/admin/phases`)
 - [x] Initial and second offering phase types represented in schema/UI
-- [~] Offering settlement implemented but needs full official-rule tie behavior and deterministic random remainder assignment
-- [~] Remaining-share accounting between first and second offering needs strict enforcement
+- [x] Offering settlement with official-rule tie split + deterministic remainder assignment
+- [x] Remaining-share accounting between first and second offering
 - [x] Listing records can be created by players
-- [ ] Listing-phase silent auction settlement for player listings (official rule)
-- [ ] Listing buy flow (currently disabled in player UI)
-- [ ] Full listing transfer accounting (seller shares down, buyer shares up, cash movement, listing fill status)
+- [~] Listing-phase silent auction settlement for player listings (implemented with contestant-level bids)
+- [~] Listing buy flow (buy action now uses listing-phase bid workflow)
+- [x] Listing transfer accounting (seller shares down, buyer shares up, cash movement, listing fill status)
 
 ## D) Pricing, ratings, and elimination
 - [x] Weekly ratings submission by players
@@ -51,20 +51,20 @@ This tracker is the single source of truth for what is already implemented versu
 
 ## G) Admin operations
 - [x] Admin dashboard exists with high-level stats
-- [~] Dashboard mostly informational; needs direct operational controls for preseason/weekly runbook
-- [ ] Admin game/episode controls (air date, aired flag, week progression)
-- [ ] One-click weekly operations flow from dashboard
+- [x] Dashboard has direct preseason controls and weekly runbook actions
+- [~] Admin game/episode controls (week aired controls on dashboard; dedicated page not implemented)
+- [x] One-click weekly operations flow from dashboard
 
 ## H) Rules compliance gaps to close
-- [ ] Tie bids must split evenly among tied bidders; remainder distributed randomly
-- [ ] Random remainder assignment must be deterministic/auditable
-- [ ] Second offering should only use shares not already awarded in the initial offering
-- [ ] Listing phases should use silent auction settlement according to official rules
+- [x] Tie bids split evenly among tied bidders with remainder handling
+- [x] Random remainder assignment is deterministic/auditable
+- [x] Second offering only uses shares not already awarded in initial offering
+- [~] Listing phases use silent auction settlement (bids currently contestant-level rather than listing-targeted)
 
 ## I) Documentation and tests
 - [~] README partially outdated (legacy references remain)
 - [x] Lightweight testing process doc exists
-- [ ] Core rules test suite for settlement/dividends/listings
+- [~] Core rules test suite started (utilities, tie allocation, dividends)
 - [ ] Regression tests for admin critical actions
 
 ## Immediate execution order

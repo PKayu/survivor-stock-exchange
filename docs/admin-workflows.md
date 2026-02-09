@@ -96,9 +96,9 @@ Repeat this every episode week.
 
 ## 5) Known gaps (current app)
 
-- Dashboard readiness controls are still limited
-- Listing settlement engine is not complete
+- Weekly controls are available on `/admin/dashboard`, but there is no dedicated episode management page yet
+- Listing auctions are settled by contestant-level bids (not listing-targeted bids)
 - Full transaction ledger is not implemented
-- Some rule validations are in progress
+- Regression coverage for admin actions is still in progress
 
 Track progress in `docs/implementation-tracker.md`.

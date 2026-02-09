@@ -102,7 +102,7 @@ export function CreateListingForm({ stocks, phaseId }: CreateListingFormProps) {
 
       {stocks.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          You don't have any stocks to sell.
+          You do not have any stocks to sell.
         </p>
       ) : (
         <>
@@ -115,7 +115,9 @@ export function CreateListingForm({ stocks, phaseId }: CreateListingFormProps) {
                 const stock = stocks.find((s) => s.contestant.id === value)
                 if (stock) {
                   setShares(1)
-                  setMinimumPrice(Math.round(stock.contestant.currentPrice * 0.5 * 100) / 100)
+                  const suggestedMin =
+                    Math.round((stock.contestant.currentPrice * 0.5) / 0.25) * 0.25
+                  setMinimumPrice(Math.max(0.25, suggestedMin))
                 }
               }}
               disabled={isLoading}
@@ -169,8 +171,8 @@ export function CreateListingForm({ stocks, phaseId }: CreateListingFormProps) {
                 <Input
                   id="minPrice"
                   type="number"
-                  min="0.01"
-                  step="0.01"
+                  min="0.25"
+                  step="0.25"
                   value={minimumPrice}
                   onChange={(e) => setMinimumPrice(parseFloat(e.target.value) || 0)}
                   disabled={isLoading}

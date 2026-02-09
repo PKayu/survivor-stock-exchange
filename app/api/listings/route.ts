@@ -6,9 +6,13 @@ import { z } from "zod"
 const listingSchema = z.object({
   phaseId: z.string(),
   contestantId: z.string(),
-  shares: z.number().min(1),
-  minimumPrice: z.number().min(0),
+  shares: z.number().int().min(1),
+  minimumPrice: z.number().min(0.25),
 })
+
+function isQuarterIncrement(value: number): boolean {
+  return Math.abs(value * 4 - Math.round(value * 4)) < 1e-9
+}
 
 export async function POST(req: Request) {
   try {
@@ -31,6 +35,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Phase is not open" }, { status: 400 })
     }
 
+    if (
+      phase.phaseType !== "FIRST_LISTING" &&
+      phase.phaseType !== "SECOND_LISTING"
+    ) {
+      return NextResponse.json(
+        { error: "Listings can only be created during listing phases" },
+        { status: 400 }
+      )
+    }
+
+    if (!isQuarterIncrement(minimumPrice)) {
+      return NextResponse.json(
+        { error: "Minimum price must be in $0.25 increments" },
+        { status: 400 }
+      )
+    }
+
     // Check if user has a portfolio
     const portfolio = await prisma.portfolio.findUnique({
       where: {
@@ -50,8 +71,24 @@ export async function POST(req: Request) {
       where: { id: contestantId },
     })
 
-    if (!contestant || contestant.seasonId !== phase.seasonId) {
+    if (!contestant || contestant.seasonId !== phase.seasonId || !contestant.isActive) {
       return NextResponse.json({ error: "Invalid contestant" }, { status: 400 })
+    }
+
+    const existingListing = await prisma.listing.findFirst({
+      where: {
+        sellerId: session.user.id,
+        phaseId,
+        contestantId,
+        isFilled: false,
+      },
+    })
+
+    if (existingListing) {
+      return NextResponse.json(
+        { error: "You already have an active listing for this contestant in this phase" },
+        { status: 400 }
+      )
     }
 
     // Check user has enough shares
