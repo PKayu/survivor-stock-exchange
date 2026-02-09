@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,9 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency, formatPercentage } from "@/lib/utils"
 import { PHASE_NAMES } from "@/types"
 import Link from "next/link"
-import { TrendingUp, TrendingDown, DollarSign, Wallet, BarChart3, AlertCircle } from "lucide-react"
+import { TrendingUp, TrendingDown, DollarSign, Wallet, BarChart3, AlertCircle, Info } from "lucide-react"
+import { WelcomeBanner } from "@/components/welcome-banner"
+import { PracticeModeView } from "@/components/practice-mode-view"
+import { completeOnboarding } from "./actions"
 
 async function getDashboardData(userId: string) {
+  // Get user with onboarding status
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { onboardingCompleted: true },
+  })
+
   // Get active season
   const activeSeason = await prisma.season.findFirst({
     where: { isActive: true },
@@ -65,7 +73,7 @@ async function getDashboardData(userId: string) {
   // Get recent activity
   const recentBids = await prisma.bid.findMany({
     where: {
-      user: { id: userId },
+      userId,
       phase: { seasonId: activeSeason.id },
     },
     include: { phase: true },
@@ -79,6 +87,7 @@ async function getDashboardData(userId: string) {
     currentPhase,
     standings,
     recentBids,
+    user,
   }
 }
 
@@ -134,7 +143,7 @@ function StatCard({
 }
 
 async function DashboardContent() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   if (!session?.user) {
     redirect("/login")
@@ -143,24 +152,18 @@ async function DashboardContent() {
   const data = await getDashboardData(session.user.id)
 
   if (!data.season) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle>No Active Season</CardTitle>
-            <CardDescription>
-              There are no active Survivor seasons at the moment.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    )
+    return <PracticeModeView userName={session.user.name} />
   }
 
-  const { portfolio, currentPhase, standings, recentBids } = data
+  const { portfolio, currentPhase, standings, recentBids, user } = data
 
   return (
     <div className="space-y-6">
+      {/* Onboarding Banner for New Users */}
+      {!user?.onboardingCompleted && (
+        <WelcomeBanner onDismiss={completeOnboarding} />
+      )}
+
       {/* Welcome Header */}
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>

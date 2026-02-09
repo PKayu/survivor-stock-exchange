@@ -14,11 +14,14 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  password      String
+  password      String?
   name          String
+  image         String?
+  emailVerified DateTime?
   isAdmin       Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  portfolios    Portfolio[]
+  createdAt           DateTime  @default(now())
+  onboardingCompleted Boolean   @default(false)
+  portfolios          Portfolio[]
   ratings       Rating[]
   bids          Bid[]
   listings      Listing[]

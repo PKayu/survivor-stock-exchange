@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { SurvivorIcon } from "./icons/survivor-icon"
+import { TorchIcon } from "./icons/torch-icon"
 
 export function NavHeader() {
   const { data: session, status } = useSession()
@@ -23,9 +23,16 @@ export function NavHeader() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
-              <SurvivorIcon className="h-6 w-6" />
-              <span className="font-bold text-lg">Survivor Stock Exchange</span>
+            <Link href="/" className="flex items-center gap-3 group">
+              <TorchIcon size="sm" animated={false} />
+              <div className="flex flex-col">
+                <span className="font-display text-xl tracking-wider text-gradient-fire leading-none">
+                  SURVIVOR
+                </span>
+                <span className="font-heading text-xs text-muted-foreground tracking-widest">
+                  STOCK EXCHANGE
+                </span>
+              </div>
             </Link>
           </div>
           <div className="h-9 w-9 bg-muted animate-pulse rounded-full" />
@@ -38,9 +45,16 @@ export function NavHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <SurvivorIcon className="h-6 w-6" />
-            <span className="font-bold text-lg">Survivor Stock Exchange</span>
+          <Link href="/" className="flex items-center gap-3 group">
+            <TorchIcon size="sm" animated />
+            <div className="flex flex-col">
+              <span className="font-display text-xl tracking-wider text-gradient-fire leading-none">
+                SURVIVOR
+              </span>
+              <span className="font-heading text-xs text-muted-foreground tracking-widest">
+                STOCK EXCHANGE
+              </span>
+            </div>
           </Link>
 
           {session && (
@@ -125,14 +139,9 @@ export function NavHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/login">
-                <Button variant="ghost" size="sm">Log in</Button>
-              </Link>
-              <Link href="/register">
-                <Button size="sm">Sign up</Button>
-              </Link>
-            </div>
+            <Link href="/login">
+              <Button variant="torch" size="sm">Sign In with Google</Button>
+            </Link>
           )}
         </div>
       </div>

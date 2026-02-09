@@ -1,8 +1,7 @@
 import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -42,7 +41,7 @@ async function getSeasonsData() {
 async function createSeason(formData: FormData) {
   "use server"
 
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   if (!session?.user?.isAdmin) {
     throw new Error("Unauthorized")
@@ -71,7 +70,7 @@ async function createSeason(formData: FormData) {
 async function toggleSeasonStatus(formData: FormData) {
   "use server"
 
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   if (!session?.user?.isAdmin) {
     throw new Error("Unauthorized")
@@ -103,7 +102,7 @@ async function toggleSeasonStatus(formData: FormData) {
 async function deleteSeason(formData: FormData) {
   "use server"
 
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   if (!session?.user?.isAdmin) {
     throw new Error("Unauthorized")
@@ -176,7 +175,7 @@ function CreateSeasonDialog() {
 }
 
 async function SeasonsPageContent() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   if (!session?.user) {
     redirect("/login")

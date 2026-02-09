@@ -1,125 +1,261 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-}
-
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
+/*
+  SURVIVOR STOCK EXCHANGE DESIGN SYSTEM
+  Inspired by the TV show Survivor - tropical island vibes with tribe buff colors
+  Color palette: Orange & Blue primary, Jungle Green accents, Golden Sand highlights
+*/
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  :root {
+    --radius: 0.625rem;
+
+    /* Core Background - Dark jungle night */
+    --background: 180 15% 8%;
+    --foreground: 40 30% 95%;
+
+    /* Card surfaces - Deeper jungle with slight warmth */
+    --card: 180 12% 12%;
+    --card-foreground: 40 30% 95%;
+
+    /* Popover - Slightly elevated surface */
+    --popover: 180 10% 15%;
+    --popover-foreground: 40 30% 95%;
+
+    /* Primary - Survivor Orange (iconic buff color) */
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 5%;
+
+    /* Secondary - Ocean Blue (tribe buff color) */
+    --secondary: 200 85% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted - Jungle shadow */
+    --muted: 180 10% 18%;
+    --muted-foreground: 40 15% 65%;
+
+    /* Accent - Jungle Green */
+    --accent: 145 60% 35%;
+    --accent-foreground: 40 30% 95%;
+
+    /* Destructive - Tribal Council Fire */
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border & Input - Bamboo-like warm tones */
+    --border: 35 25% 25%;
+    --input: 35 20% 20%;
+    --ring: 25 95% 53%;
+
+    /* Tribe Colors (for stocks/teams) */
+    --tribe-orange: 25 95% 53%;
+    --tribe-blue: 200 85% 45%;
+    --tribe-green: 145 60% 40%;
+    --tribe-yellow: 45 100% 55%;
+    --tribe-purple: 280 70% 55%;
+    --tribe-red: 0 80% 55%;
+
+    /* Special Effects */
+    --torch-glow: 25 100% 50%;
+    --ocean-shimmer: 195 85% 50%;
+    --sand: 40 50% 75%;
+    --jungle-dark: 150 40% 12%;
+    --fire-orange: 20 100% 55%;
+    --fire-yellow: 45 100% 60%;
+
+    /* Gradients */
+    --gradient-fire: linear-gradient(135deg, hsl(25, 100%, 55%) 0%, hsl(45, 100%, 55%) 50%, hsl(25, 100%, 55%) 100%);
+    --gradient-ocean: linear-gradient(180deg, hsl(200, 85%, 45%) 0%, hsl(210, 80%, 35%) 100%);
+    --gradient-jungle: linear-gradient(180deg, hsl(145, 50%, 25%) 0%, hsl(160, 40%, 15%) 100%);
+    --gradient-sunset: linear-gradient(135deg, hsl(25, 95%, 53%) 0%, hsl(35, 100%, 60%) 50%, hsl(195, 85%, 50%) 100%);
+    --gradient-tribal: linear-gradient(180deg, hsl(180, 15%, 8%) 0%, hsl(25, 30%, 12%) 100%);
+
+    /* Shadows */
+    --shadow-torch: 0 0 30px hsl(25, 100%, 50% / 0.4), 0 0 60px hsl(25, 100%, 50% / 0.2);
+    --shadow-card: 0 4px 20px hsl(0, 0%, 0% / 0.3);
+    --shadow-elevated: 0 8px 32px hsl(0, 0%, 0% / 0.4);
+
+    /* Sidebar */
+    --sidebar: 180 12% 10%;
+    --sidebar-foreground: 40 30% 90%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 145 60% 35%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 35 25% 20%;
+    --sidebar-ring: 25 95% 53%;
+
+    /* Chart colors */
+    --chart-1: 25 95% 53%;
+    --chart-2: 200 85% 45%;
+    --chart-3: 145 60% 40%;
+    --chart-4: 45 100% 55%;
+    --chart-5: 280 70% 55%;
   }
+
+  .dark {
+    /* Dark mode is the default for this Survivor theme */
+    --background: 180 15% 8%;
+    --foreground: 40 30% 95%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body), sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  .font-heading {
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+  }
+}
+
+@layer utilities {
+  /* Torch glow effect */
+  .torch-glow {
+    box-shadow: var(--shadow-torch);
+  }
+
+  /* Gradient text */
+  .text-gradient-fire {
+    background: var(--gradient-fire);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-sunset {
+    background: var(--gradient-sunset);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-ocean {
+    background: var(--gradient-ocean);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Jungle overlay */
+  .jungle-overlay {
+    background: linear-gradient(180deg,
+      hsl(180 15% 8% / 0.4) 0%,
+      hsl(180 15% 8% / 0.7) 50%,
+      hsl(180 15% 8% / 0.95) 100%
+    );
+  }
+
+  /* Bamboo border */
+  .border-bamboo {
+    border-image: linear-gradient(180deg, hsl(35, 50%, 35%), hsl(30, 45%, 25%)) 1;
+  }
+
+  /* Card hover effects */
+  .card-tribal {
+    @apply bg-card border border-border rounded-lg;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+  }
+
+  .card-tribal:hover {
+    box-shadow: var(--shadow-elevated);
+    border-color: hsl(var(--primary) / 0.4);
+    transform: translateY(-2px);
+  }
+
+  /* Glow Effects */
+  .glow-fire {
+    box-shadow: 0 0 20px hsl(25, 100%, 50% / 0.3);
+  }
+
+  .glow-ocean {
+    box-shadow: 0 0 20px hsl(200, 85%, 45% / 0.3);
+  }
+
+  /* Stock movement indicators */
+  .stock-up {
+    color: hsl(145, 70%, 50%);
+  }
+
+  .stock-down {
+    color: hsl(0, 70%, 55%);
+  }
+
+  /* Tribe badge colors */
+  .badge-tribe-orange {
+    @apply bg-[hsl(25,95%,53%)] text-black;
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-tribe-blue {
+    @apply bg-[hsl(200,85%,45%)] text-white;
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-tribe-green {
+    @apply bg-[hsl(145,60%,40%)] text-white;
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-tribe-yellow {
+    @apply bg-[hsl(45,100%,55%)] text-black;
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-tribe-purple {
+    @apply bg-[hsl(280,70%,55%)] text-white;
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
+  }
+
+  .badge-tribe-red {
+    @apply bg-[hsl(0,80%,55%)] text-white;
+    font-family: var(--font-heading), sans-serif;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    letter-spacing: 0.05em;
   }
 }

@@ -94,6 +94,8 @@ A fantasy stock trading game where players buy, sell, and trade shares of Surviv
 - `npm run build` - Build for production
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run test` - Run Vitest in watch mode
+- `npm run test:run` - Run Vitest once
 - `npm run db:push` - Push Prisma schema to database
 - `npm run db:migrate` - Create and run database migrations
 - `npm run db:seed` - Seed database with sample data
@@ -121,6 +123,12 @@ survivor-stock-exchange/
 │   └── seed.ts              # Database seeding script
 └── types/                   # TypeScript type definitions
 ```
+
+## Testing
+
+- `npm run test` - Vitest watch mode
+- `npm run test:run` - Vitest single run
+- Single test: `npm run test -- path/to/file.test.ts`
 
 ## How It Works
 

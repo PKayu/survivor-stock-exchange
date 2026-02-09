@@ -139,3 +139,56 @@ export function truncate(str: string, length: number): string {
   if (str.length <= length) return str
   return str.substring(0, length) + "..."
 }
+
+// Practice mode data generator
+export function generatePracticeContestants(count: number = 10) {
+  const firstNames = ["Jane", "John", "Sarah", "Mike", "Emily", "Chris", "Amanda", "David", "Rachel", "Tom", "Lisa", "James", "Nicole", "Ryan", "Jessica"]
+  const lastNames = ["Doe", "Smith", "Johnson", "Wilson", "Davis", "Brown", "Lee", "Kim", "Green", "Martinez", "Taylor", "Anderson", "Thomas", "Jackson", "White"]
+  const tribes = ["Lavi", "Vatu", "Soka", "Yanu", "Tiga"]
+
+  const contestants = []
+  const usedNames = new Set<string>()
+
+  for (let i = 0; i < count; i++) {
+    let name: string
+    do {
+      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
+      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)]
+      name = `${firstName} ${lastName}`
+    } while (usedNames.has(name))
+
+    usedNames.add(name)
+
+    const basePrice = Math.floor(Math.random() * 45) + 5 // $5-$50
+    const change = (Math.random() * 20 - 10) // -10% to +10%
+
+    contestants.push({
+      id: `practice-${i}`,
+      name,
+      tribe: tribes[Math.floor(Math.random() * tribes.length)],
+      price: basePrice,
+      change: Number(change.toFixed(1)),
+    })
+  }
+
+  return contestants
+}
+
+export function generatePracticeStandings(count: number = 5) {
+  const standings = []
+  let netWorth = 150
+
+  for (let i = 0; i < count; i++) {
+    const movement = Number((Math.random() * 15 + 2 - (i * 2)).toFixed(1))
+    netWorth -= Math.random() * 15 + 5
+
+    standings.push({
+      rank: i + 1,
+      name: `Demo Player ${i + 1}`,
+      netWorth: Number(netWorth.toFixed(2)),
+      movement,
+    })
+  }
+
+  return standings
+}

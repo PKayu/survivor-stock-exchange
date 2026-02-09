@@ -1,39 +1,34 @@
-import { withAuth } from "next-auth/middleware"
+import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 
-export default withAuth(
-  function middleware(req) {
-    const path = req.nextUrl.pathname
-    const token = req.nextauth.token
-    const isAdmin = token?.isAdmin as boolean | undefined
+export const runtime = "nodejs"
 
-    // Redirect unauthenticated users trying to access protected pages
-    const isProtectedPath =
-      path.startsWith("/dashboard") ||
-      path.startsWith("/trade") ||
-      path.startsWith("/ratings") ||
-      path.startsWith("/portfolio") ||
-      path.startsWith("/standings") ||
-      path.startsWith("/contestants")
+export default auth((req) => {
+  const path = req.nextUrl.pathname
+  const token = req.auth
+  const isAdmin = token?.isAdmin as boolean | undefined
 
-    const isAdminPath = path.startsWith("/admin/")
+  // Protected paths
+  const isProtectedPath =
+    path.startsWith("/dashboard") ||
+    path.startsWith("/trade") ||
+    path.startsWith("/ratings") ||
+    path.startsWith("/portfolio") ||
+    path.startsWith("/standings") ||
+    path.startsWith("/contestants")
 
-    if (isProtectedPath && !token) {
-      return NextResponse.redirect(new URL("/login", req.url))
-    }
+  const isAdminPath = path.startsWith("/admin/")
 
-    if (isAdminPath && !isAdmin) {
-      return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
-
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
+  if (isProtectedPath && !token) {
+    return NextResponse.redirect(new URL("/login", req.url))
   }
-)
+
+  if (isAdminPath && !isAdmin) {
+    return NextResponse.redirect(new URL("/dashboard", req.url))
+  }
+
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [

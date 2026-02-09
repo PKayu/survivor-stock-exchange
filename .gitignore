@@ -71,3 +71,6 @@ pids/
 
 # Claude Code
 .claude/settings.local.json
+
+#Jungle Trader
+/jungle-trader
