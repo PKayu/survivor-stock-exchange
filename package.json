@@ -1,0 +1,10 @@
+{
+  "name": "survivor-stock-exchange",
+  "version": "1.0.0",
+  "description": "A fantasy stock market for Survivor contestants",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}
